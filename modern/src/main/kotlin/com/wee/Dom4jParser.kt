@@ -22,7 +22,8 @@ fun domParse(args: Array<String>) {
 
     val reader = SAXReader()
     reader.addHandler("/users/user", Dom4jParser(xjsonParser))
-//    reader.setDefaultHandler(PruningElementHandler())
+    reader.addHandler("/users/user/id", PruningElementHandler())
+    reader.setDefaultHandler(PruningElementHandler())
     reader.read(source)
 //    reader.read(source).rootElement.elementIterator().forEach {
 //        println("${it.qName} : ${it.text} : $count")
@@ -36,14 +37,14 @@ class Dom4jParser(val xjsonParser: XjsonParser) : ElementHandler {
     override fun onStart(elementPath: ElementPath) {
         val element = elementPath.current
 //        xjsonParser.startElement(element.name)
-        element.detach()
+        element.detach().detach()
     }
 
     override fun onEnd(elementPath: ElementPath) {
         printMemoryInfo("${elementPath.current.name} : ${elementPath.current.text.trim()}")
         val element = elementPath.current
-        buildElement(element)
-        element.detach()
+//        buildElement(element)
+        element.detach().detach()
     }
 
     fun buildElement(element: Element) {
@@ -55,16 +56,18 @@ class Dom4jParser(val xjsonParser: XjsonParser) : ElementHandler {
                 buildElement(it)
             }
         }
+        element.detach().detach()
         xjsonParser.endElement(element.name)
     }
 }
 
 class PruningElementHandler : ElementHandler {
     override fun onStart(elementPath: ElementPath) {
-        elementPath.current.detach()
+        elementPath.current.detach().detach()
     }
 
     override fun onEnd(elementPath: ElementPath) {
-        elementPath.current.detach()
+        println(elementPath.current.name)
+        elementPath.current.detach().detach()
     }
 }
