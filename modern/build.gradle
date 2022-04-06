@@ -1,12 +1,14 @@
 plugins {
     id 'java'
     id 'org.jetbrains.kotlin.jvm' version '1.5.0'
+    id 'application'
 }
 
 group 'org.example'
 version '1.0-SNAPSHOT'
 
 repositories {
+    mavenLocal()
     mavenCentral()
 }
 
@@ -20,4 +22,25 @@ dependencies {
 
 test {
     useJUnitPlatform()
+}
+
+jar {
+    from files(sourceSets.main.output.classesDirs)
+    from configurations.runtimeClasspath.asFileTree.files.collect { zipTree(it) }
+
+    manifest {
+        attributes 'Main-Class': 'com.wee.MainKt'
+    }
+}
+
+task copyAllDependencies(type: Copy) {
+    //referring to the 'compileClasspath' configuration
+    from configurations.compileClasspath
+    into 'allLibs'
+}
+
+
+// 生成启动脚本打包
+application{
+    mainClass = 'com.wee.MainKt'
 }
