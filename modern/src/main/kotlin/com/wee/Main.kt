@@ -8,5 +8,6 @@ fun main(args: Array<String>) {
 //    xmlCreate(args)
 //    saxParse(args)
 //    staxParse(args)
-    domParse(args)
+//    domParse(args)
+    print("hello")
 }

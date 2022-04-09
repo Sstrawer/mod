@@ -2,10 +2,11 @@ plugins {
     id 'java'
     id 'org.jetbrains.kotlin.jvm' version '1.5.0'
     id 'application'
+    id 'com.github.johnrengelman.shadow' version '6.1.0'
 }
 
 group 'org.example'
-version '1.0-SNAPSHOT'
+version '0.1'
 
 repositories {
     mavenLocal()
@@ -24,23 +25,37 @@ test {
     useJUnitPlatform()
 }
 
-jar {
-    from files(sourceSets.main.output.classesDirs)
-    from configurations.runtimeClasspath.asFileTree.files.collect { zipTree(it) }
-
-    manifest {
-        attributes 'Main-Class': 'com.wee.MainKt'
+sourceSets {
+    main {
+        java.srcDir 'src/main/java'
+        resources.srcDir 'src/main/resources'
+    }
+    test {
+        java.srcDir 'src/test/java'
+        resources.srcDir 'src/test/resources'
     }
 }
 
-task copyAllDependencies(type: Copy) {
-    //referring to the 'compileClasspath' configuration
-    from configurations.compileClasspath
-    into 'allLibs'
+jar {
+    from sourceSets.main.output
+    from configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+    manifest {
+        attributes 'Main-Class': 'com.wee.MainKt'
+//        'Class-Path': configurations.runtimeClasspath.asFileTree.files.collect { 'lib/'+it.name }.join(' ')
+    }
 }
 
+//将依赖包拷贝到指定目录 配合class-path
+task copyAllDeps(type: Copy) {
+    from configurations.runtimeClasspath
+    into 'build/libs'
+}
+
+shadowJar {
+    mainClassName = 'com.wee.MainKt'
+}
 
 // 生成启动脚本打包
-application{
+application {
     mainClass = 'com.wee.MainKt'
 }
