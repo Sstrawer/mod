@@ -3,6 +3,7 @@ package com.wee
 import com.alibaba.fastjson.JSON
 import com.alibaba.fastjson.JSONObject
 import jdk.nashorn.internal.objects.NativeArray.forEach
+import java.io.FileReader
 import java.io.FileWriter
 import java.io.InputStream
 import java.net.HttpURLConnection
@@ -14,7 +15,8 @@ import java.util.*
  *@create 22/4/13 19:29
  */
 fun main(args: Array<String>) {
-    getGiteeRepo()
+//    getGiteeRepo()
+    downRepos()
 }
 
 fun getGiteeRepo() {
@@ -39,4 +41,20 @@ fun getGiteeRepo() {
             }
     }
     writer.close()
+}
+
+fun downRepos(){
+    val target = "../repocode"
+    val reader = FileReader("repo100")
+    var i = 0
+    reader.forEachLine {
+        println("${i++} git clone $it")
+        val dir = it.substringAfterLast(":")
+            .substringBeforeLast(".")
+            .replace("/",".")
+        Runtime.getRuntime().exec("git clone --filter=blob:none --depth 1 --single-branch --no-checkout $it $target/$dir")
+        Runtime.getRuntime().exec("git -C $target/$dir sparse-checkout init")
+        Runtime.getRuntime().exec("git -C $target/$dir sparse-checkout set *.java")
+        Runtime.getRuntime().exec("git -C $target/$dir read-tree -mu HEAD")
+    }
 }
