@@ -2,10 +2,8 @@ package com.wee
 
 import com.alibaba.fastjson.JSON
 import com.alibaba.fastjson.JSONObject
-import jdk.nashorn.internal.objects.NativeArray.forEach
 import java.io.FileReader
 import java.io.FileWriter
-import java.io.InputStream
 import java.net.HttpURLConnection
 import java.net.URL
 import java.util.*
@@ -43,18 +41,25 @@ fun getGiteeRepo() {
     writer.close()
 }
 
-fun downRepos(){
-    val target = "../repocode"
-    val reader = FileReader("repo100")
+fun downRepos() {
+    val baseDir = "../repocode"
+    val reader = FileReader("repo10")
     var i = 0
     reader.forEachLine {
         println("${i++} git clone $it")
-        val dir = it.substringAfterLast(":")
+        val repoDir = it.substringAfterLast(":")
             .substringBeforeLast(".")
-            .replace("/",".")
-        Runtime.getRuntime().exec("git clone --filter=blob:none --depth 1 --single-branch --no-checkout $it $target/$dir")
-        Runtime.getRuntime().exec("git -C $target/$dir sparse-checkout init")
-        Runtime.getRuntime().exec("git -C $target/$dir sparse-checkout set *.java")
-        Runtime.getRuntime().exec("git -C $target/$dir read-tree -mu HEAD")
+            .replace("/", ".")
+        var cmd =
+            "git clone --filter=blob:none --depth 1 --single-branch --no-checkout $it $baseDir/$repoDir" + " ; git -C $baseDir/$repoDir sparse-checkout init" + " ; git -C $baseDir/$repoDir sparse-checkout set *.java" + " ; git -C $baseDir/$repoDir read-tree -mu HEAD" + " ; rm -recurse -force $baseDir/$repoDir/.git/"
+        println(cmd)
+        Runtime.getRuntime().exec(cmd).waitFor()
+//        Runtime.getRuntime().exec("git clone --filter=blob:none --depth 1 --single-branch --no-checkout $it $baseDir/$repoDir").waitFor()
+//        Runtime.getRuntime().exec("git -C $baseDir/$repoDir sparse-checkout init").waitFor()
+//        Runtime.getRuntime().exec("git -C $baseDir/$repoDir sparse-checkout set *.java").waitFor()
+//        Runtime.getRuntime().exec("git -C $baseDir/$repoDir read-tree -mu HEAD").waitFor()
+//        Runtime.getRuntime().exec("rm -recurse -force $baseDir/$repoDir/.git/").waitFor()
+
+
     }
 }
