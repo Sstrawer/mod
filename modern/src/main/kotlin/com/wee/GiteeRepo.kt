@@ -2,10 +2,15 @@ package com.wee
 
 import com.alibaba.fastjson.JSON
 import com.alibaba.fastjson.JSONObject
+import com.beust.jcommander.JCommander
+import com.beust.jcommander.Parameter
+import com.beust.jcommander.internal.Lists
+import java.io.File
 import java.io.FileReader
 import java.io.FileWriter
 import java.net.HttpURLConnection
 import java.net.URL
+import java.nio.charset.Charset
 import java.util.*
 
 /**
@@ -13,8 +18,18 @@ import java.util.*
  *@create 22/4/13 19:29
  */
 fun main(args: Array<String>) {
+    val argument = Argument()
+    val jCommander = JCommander.newBuilder()
+        .addObject(argument)
+        .build()
+    try {
+        jCommander.parse(*args)
+    } catch (e: Exception) {
+        jCommander.usage()
+        return
+    }
 //    getGiteeRepo()
-    downRepos()
+    downRepos(argument)
 }
 
 fun getGiteeRepo() {
@@ -41,25 +56,63 @@ fun getGiteeRepo() {
     writer.close()
 }
 
-fun downRepos() {
-    val baseDir = "../repocode"
-    val reader = FileReader("repo10")
-    var i = 0
-    reader.forEachLine {
-        println("${i++} git clone $it")
-        val repoDir = it.substringAfterLast(":")
+fun downRepos(argument: Argument) {
+    val sshUrlFile = argument.repos
+    val regs = argument.filter?.replace(",", " ")
+    var base = "."
+    val baseDir = File(base)
+
+    var count = 0
+    FileReader(sshUrlFile).forEachLine { sshUrl ->
+        var repo = sshUrl.substringAfterLast(":")
             .substringBeforeLast(".")
-            .replace("/", ".")
-        var cmd =
-            "git clone --filter=blob:none --depth 1 --single-branch --no-checkout $it $baseDir/$repoDir" + " ; git -C $baseDir/$repoDir sparse-checkout init" + " ; git -C $baseDir/$repoDir sparse-checkout set *.java" + " ; git -C $baseDir/$repoDir read-tree -mu HEAD" + " ; rm -recurse -force $baseDir/$repoDir/.git/"
-        println(cmd)
-        Runtime.getRuntime().exec(cmd).waitFor()
-//        Runtime.getRuntime().exec("git clone --filter=blob:none --depth 1 --single-branch --no-checkout $it $baseDir/$repoDir").waitFor()
-//        Runtime.getRuntime().exec("git -C $baseDir/$repoDir sparse-checkout init").waitFor()
-//        Runtime.getRuntime().exec("git -C $baseDir/$repoDir sparse-checkout set *.java").waitFor()
-//        Runtime.getRuntime().exec("git -C $baseDir/$repoDir read-tree -mu HEAD").waitFor()
-//        Runtime.getRuntime().exec("rm -recurse -force $baseDir/$repoDir/.git/").waitFor()
-
-
+            .replace("/", "_")
+        println("${count++}: $repo")
+        try {
+            exec(
+                "git clone --filter=blob:none --depth 1 --single-branch --no-checkout $sshUrl $repo",
+                null,
+                baseDir
+            )
+            exec("git -C $repo sparse-checkout init", null, baseDir)
+            exec("git -C $repo sparse-checkout set $regs", null, baseDir)
+            exec("git -C $repo read-tree -mu HEAD", null, baseDir)
+            exec("rm -rf $repo/.git", null, baseDir)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
     }
 }
+
+fun exec(command: String, envp: Array<String>? = null, dir: File? = File(".")) {
+    val runTime = Runtime.getRuntime()
+    println("$command")
+    val process = runTime.exec(command, envp, dir)
+    process.inputStream.copyTo(System.out)
+    process.errorStream.copyTo(System.err)
+//    process.inputStream.bufferedReader(Charset.forName(System.getProperty("sun.jnu.encoding"))).forEachLine { println(it) }
+//    process.errorStream.bufferedReader(Charset.forName(System.getProperty("sun.jnu.encoding"))).forEachLine { println(it) }
+    process.waitFor()
+}
+
+fun exec(command: Array<String>, envp: Array<String>? = null) {
+    val runTime = Runtime.getRuntime()
+    val process = runTime.exec(command, envp)
+    process.inputStream.bufferedReader(Charset.forName(System.getProperty("sun.jnu.encoding")))
+        .forEachLine { println(it) }
+    process.errorStream.bufferedReader(Charset.forName(System.getProperty("sun.jnu.encoding")))
+        .forEachLine { println(it) }
+    println(process.waitFor())
+}
+
+class Argument {
+    @Parameter
+    var parameters: List<String> = Lists.newArrayList()
+
+    @Parameter(names = ["-repos"], required = true, description = "仓库文件, eg: Java.repos")
+    var repos: String? = null
+
+    @Parameter(names = ["-filter"], required = true, description = "文件过滤逗号分隔, eg: *.java,*.javacode")
+    var filter: String? = null
+}
+

@@ -1,4 +1,9 @@
+import kotlin.collections.CollectionsKt;
 import org.junit.jupiter.api.Test;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.Function;
 
 /**
  * @author young
@@ -7,11 +12,12 @@ import org.junit.jupiter.api.Test;
 public class TestJava {
     @Test
     public void testClass() {
-        Object noname = new Object(){
+        Object noname = new Object() {
             {
                 System.out.println("hello, a noname object created");
             }
-            public void m1(){
+
+            public void m1() {
                 System.out.println("m1");
             }
 
@@ -22,5 +28,16 @@ public class TestJava {
         };
 //        noname.m1();
         System.out.println(noname);
+    }
+
+    static <T> T[] toArray(List<T> list) {
+        T[] array = (T[]) new Object[list.size()];
+        return list.toArray(array);
+    }
+
+    @Test
+    public void testArray() {
+        toArray(CollectionsKt.mutableListOf(1, 2, 3));
+        var list = new ArrayList<Integer>();
     }
 }

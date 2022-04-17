@@ -3,9 +3,10 @@ plugins {
     id 'org.jetbrains.kotlin.jvm' version '1.5.0'
     id 'application'
     id 'com.github.johnrengelman.shadow' version '6.1.0'
+    id 'groovy'
 }
 
-group 'org.example'
+group 'com.wee'
 version '0.1'
 
 repositories {
@@ -20,7 +21,7 @@ dependencies {
     implementation 'org.dom4j:dom4j:2.1.3'
     implementation 'org.jsoup:jsoup:1.14.3'
     implementation 'com.alibaba:fastjson:1.2.80'
-
+    implementation 'com.beust:jcommander:1.82'
 }
 
 test {
@@ -42,19 +43,21 @@ jar {
     from sourceSets.main.output
     from configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
     manifest {
-        attributes 'Main-Class': 'com.wee.MainKt'
-//        'Class-Path': configurations.runtimeClasspath.asFileTree.files.collect { 'lib/'+it.name }.join(' ')
+        attributes 'Main-Class': 'com.wee.GiteeRepoKt'
     }
 }
 
-//将依赖包拷贝到指定目录 配合class-path
-task copyAllDeps(type: Copy) {
-    from configurations.runtimeClasspath
-    into 'build/libs'
+task repo(type: Copy) {
+    dependsOn(shadowJar)
+    println "coping"
+//    from jar.archiveFile
+    from '../repo100', 'build/libs/modern-0.1-all.jar'
+    into '../../repos'
 }
 
+
 shadowJar {
-    mainClassName = 'com.wee.MainKt'
+    mainClassName = 'com.wee.GiteeRepoKt'
 }
 
 // 生成启动脚本打包
