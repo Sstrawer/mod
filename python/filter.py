@@ -17,12 +17,11 @@ def filter(pyfile):
             return
 
         myhash = hashlib.md5()
-        with open(pyfile, "r", encoding="utf-8") as f:
-            # print(pyfile)
+        with open(pyfile, "rb") as f:
             for line in f:
-                if len(line) > 1000:
+                if len(line.decode('utf-8')) > 1000:
                     return
-                myhash.update(line.encode("utf-8"))
+                myhash.update(line)
         md5 = myhash.hexdigest()
 
         pyfile_new = f"{output_filtered}/{size}-{md5}.py"
